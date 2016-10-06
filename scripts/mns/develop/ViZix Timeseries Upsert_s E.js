@@ -4,7 +4,7 @@
  *
  */
 function (options) {
- //var options = {pageSize: 10, pageNumber: 1};
+    //var options = {pageSize: 10, pageNumber: 1};
     // the time bucket size, in minutes
     var window = 1;
 
@@ -53,15 +53,16 @@ function (options) {
 
     a = db.thingSnapshots.aggregate(
         [
-            {"$match": {"value.thingTypeCode": {"$in": ['item']}, 
-                         "time": {"$gte": start, "$lte": end}, 
-                         "value.source.value" : { $exists: true } } 
+            {"$match": {"value.thingTypeCode": {"$in": ['item']},
+                "time": {"$gte": start, "$lte": end},
+                "value.source.value" : { $exists: true } }
             },
             {"$project" : {
                 "_id" : "$_id",
                 "serialNumber" : "$value.serialNumber",
-                "source" : "$value.source.value",    
-                "time" : "$time"                
+                "source" : "$value.source.value",
+                //"time" : "$time"
+                "time" : "$value.modifiedTime"
             }},
             {"$sort": {"time": 1}},
             {
@@ -73,7 +74,8 @@ function (options) {
                         "day": {"$dayOfMonth": "$time"},
                         "month": {"$month": "$time"},
                         "year": {"$year": "$time"},
-                        "time": "$time",
+                        //"time": "$time",
+                        "time" : "$value.modifiedTime",
                         "serialNumber": "$serialNumber",
                         "source": "$source"
                     }
@@ -95,35 +97,35 @@ function (options) {
             {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1, "_id.hour": 1, "_id.range": 1}}
         ],
         {allowDiskUse: true}
-    ).map(function (x) { 
+    ).map(function (x) {
         var minStart = (x._id.range * window);
         if (minStart.toString().length == 1) {
             minStart = "0" + minStart;
-        }        
+        }
         var d = new Date(x._id.year, x._id.month, x._id.day, x._id.hour, minStart, 0, 0);
         var rowHeader = timestampToHHMM(d.getTime() + utcOffset * 3600 * 1000);
-        
+
         if (!table.rowNames.contains(rowHeader)){
             table.rowNames.push(rowHeader);
         }
         var colHeader = x._id.source;
         if (!table.columnNames.contains(colHeader)){
             table.columnNames.push(colHeader);
-        }        
+        }
         var value = parseFloat((NumberInt(x.count) / (window * 60))).toFixed(2);
-        
+
         if(result[colHeader]){
             result[colHeader][rowHeader] = value;
         }else{
             var row = {};
             row[rowHeader] = value;
-            result[colHeader] = row;    
+            result[colHeader] = row;
         }
-      
+
     });
 
     table.data = [];
-    
+
     for (rowKey = 0; rowKey < table.rowNames.length; rowKey++) {
         var rowResult = [];
         var total = 0.0;
@@ -140,10 +142,10 @@ function (options) {
     }
 
     table.columnNames.push("Total");
-   //     table.data = result;
+    //     table.data = result;
 
 
     //table.data.splice(-1, 1);
-    
+
     return table;
 }

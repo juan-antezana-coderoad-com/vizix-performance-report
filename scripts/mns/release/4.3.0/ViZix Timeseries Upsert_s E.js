@@ -57,10 +57,9 @@ function (options) {
             {"$project" : {
                 "_id" : "$_id",
                 "serialNumber" : "$value.serialNumber",
-                "source" : "$value.source.value",    
-                "time" : "$time",
-                // "time" : {"$add": [new Date(0), "$value.tsCoreIn.value"]},
-//                 "ts" : "$value.tsCoreIn.value"
+                "source" : "$value.source.value",
+                //"time" : "$time"
+                "time" : "$value.modifiedTime",
             }},
             {"$sort": {"time": 1}},
             {
@@ -72,7 +71,8 @@ function (options) {
                         "day": {"$dayOfMonth": "$time"},
                         "month": {"$month": "$time"},
                         "year": {"$year": "$time"},
-                        "time": "$time",
+                        //"time": "$time",
+                        "time" : "$value.modifiedTime",
                         "serialNumber": "$serialNumber",
                         "source": "$source"
                     }
@@ -123,22 +123,22 @@ function (options) {
         }
 
         var value = parseFloat((NumberInt(x.count) / (window * 60))).toFixed(2);
-        
+
         if(result[colHeader]){
             result[colHeader][rowHeader] = value;
         }else{
             var row = {};
             row[rowHeader] = value;
-            result[colHeader] = row;    
+            result[colHeader] = row;
         }
-        
+
 
         //return [NumberInt(x.count),(NumberInt(x.count)/(window*60)).toFixed(2) ];
         // return [ (NumberInt(x.count)/(window*60)).toFixed(2) ];
     });
 
     table.data = [];
-    
+
     for (rowKey = 0; rowKey < table.rowNames.length; rowKey++) {
         var rowResult = [];
         var total = 0.0;
